@@ -1,0 +1,45 @@
+public/logo-dark.svg
+  s_18bcbeed2ebd53::t_ee44d9514fbdc1 1-6
+src/app/debug-confidence/page.tsx
+  s_022a11cf293820::t_cfc7eb13703014 9-13
+src/components/ReceiptEditor.tsx
+  s_022a11cf293820::t_1eb65019cd72cc 44,52-54,116-122,137-142
+src/lib/local-claims.ts
+  s_022a11cf293820::t_357cd48070a9b9 10-15,22-23,32-52
+src/lib/receipt/parser.test.ts
+  s_022a11cf293820::t_1ea24110fc2974 81-110
+tsconfig.tsbuildinfo
+  s_21675a2050cb16::t_3fe344a8419170 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e375626caf8001507a48abedaa3a721e3ea31226",
+  "prompts": {},
+  "sessions": {
+    "s_022a11cf293820": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "fcf3e8a7-f795-48a3-ab2a-314b8050ea36",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    },
+    "s_18bcbeed2ebd53": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "0b33552c-c61c-4886-99e1-b48c20f146d6",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    },
+    "s_21675a2050cb16": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "1cdc240a-87be-4381-b514-e55f3cc4876d",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
