@@ -1,0 +1,25 @@
+src/components/ParticipantRoster.tsx
+  s_6da9dff28c7aae::t_a703ec60c99270 41,44,52,54,58,80,88
+src/components/PersonTotals.tsx
+  s_6da9dff28c7aae::t_4ac47ba3d31128 35,84
+src/components/ShareSheet.tsx
+  s_6da9dff28c7aae::t_42964775a5313d 44
+src/components/SharedItemsStep.tsx
+  s_6da9dff28c7aae::t_06550b707b3cda 44,51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "3cc2ae348548b2b8e61f4eae1cf2672502a96e78",
+  "prompts": {},
+  "sessions": {
+    "s_6da9dff28c7aae": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "c1f67306-3963-4fe2-8ec5-e8dcd708cfc7",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
