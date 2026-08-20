@@ -1,0 +1,19 @@
+tsconfig.tsbuildinfo
+  s_d7471ebc75ca16::t_afd6861c762575 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "07c2c9d6e13010513584d22868c408aa499868b0",
+  "prompts": {},
+  "sessions": {
+    "s_d7471ebc75ca16": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "f3d08e81-34aa-4fc3-bd65-aa962c90415a",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
