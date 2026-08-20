@@ -1,0 +1,19 @@
+tsconfig.tsbuildinfo
+  s_82772db234040a::t_185802370d9f7c 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9128055bacf3ae747fe5e0f02c835b1593ffa86f",
+  "prompts": {},
+  "sessions": {
+    "s_82772db234040a": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "274ae514-4a1a-40e2-a7c5-3b4a3dd1d71f",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
