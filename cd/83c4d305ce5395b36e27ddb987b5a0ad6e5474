@@ -1,0 +1,37 @@
+package-lock.json
+  s_ca7697cdc651a5::t_068cdaf0726ebe 29,776,7401,7451
+package.json
+  s_ca7697cdc651a5::t_d3ec960560f076 32
+public/icon.svg
+  s_ca7697cdc651a5::t_d1b13f92836372 1-5
+public/logo-dark.svg
+  s_ca7697cdc651a5::t_0861f5c9904b19 2-4
+public/logo-light.svg
+  s_ca7697cdc651a5::t_79a503bd86de92 2-4
+tsconfig.tsbuildinfo
+  s_388e1b59177c62::t_a097447f9e096f 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "cd83c4d305ce5395b36e27ddb987b5a0ad6e5474",
+  "prompts": {},
+  "sessions": {
+    "s_388e1b59177c62": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "a5606264-e6b5-4bef-9b3c-37aca1dd78d0",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    },
+    "s_ca7697cdc651a5": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "f2c906a6-0f6a-4769-a10c-e9ca366da1fc",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
