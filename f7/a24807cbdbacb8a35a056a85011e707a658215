@@ -1,0 +1,20 @@
+next-env.d.ts
+  h_16f4373190dfe3 3-4
+src/components/CaptureFlow.tsx
+  h_16f4373190dfe3 395,408
+src/components/ItemRow.tsx
+  h_16f4373190dfe3 39-42,45,51,57,63-107
+src/components/ReceiptEditor.tsx
+  h_16f4373190dfe3 77-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f7a24807cbdbacb8a35a056a85011e707a658215",
+  "prompts": {},
+  "humans": {
+    "h_16f4373190dfe3": {
+      "author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
