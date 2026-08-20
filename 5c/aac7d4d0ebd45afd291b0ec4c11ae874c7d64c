@@ -1,0 +1,25 @@
+src/components/CaptureFlow.tsx
+  s_b4eb1698e8641d::t_e777403ccf9b79 504
+src/components/PersonTotals.tsx
+  s_b4eb1698e8641d::t_bfe35f9742697b 4,13-14,24,26-28,49-63,72-75,81-84,92
+src/lib/money.ts
+  s_b4eb1698e8641d::t_4a8d049089af77 24-44
+src/lib/split.ts
+  s_b4eb1698e8641d::t_b001f1361145cd 35-36,55-56,136,190,192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5caac7d4d0ebd45afd291b0ec4c11ae874c7d64c",
+  "prompts": {},
+  "sessions": {
+    "s_b4eb1698e8641d": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "2e9a352f-e17e-4db9-a55c-7fa876bd9fc9",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
