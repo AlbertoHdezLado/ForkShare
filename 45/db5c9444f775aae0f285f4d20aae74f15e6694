@@ -1,0 +1,29 @@
+src/components/CaptureFlow.tsx
+  s_5fa6d25cc27aba::t_fa228d7b9ff0dc 41,459-461,477-485,487,551-569
+tsconfig.tsbuildinfo
+  s_16cc5d3d792e41::t_34e90708e67704 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "45db5c9444f775aae0f285f4d20aae74f15e6694",
+  "prompts": {},
+  "sessions": {
+    "s_16cc5d3d792e41": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "c1205478-7963-4db9-b6a2-5c964781da0d",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    },
+    "s_5fa6d25cc27aba": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "09c92b98-acbe-48e3-93da-0ea290a73792",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
