@@ -274,7 +274,18 @@ function ItemClaimModal({
                 type="text"
                 inputMode="text"
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const parsedValue = parseUnitsInput(value);
+                  // Clamp only once the input resolves to a valid number, so
+                  // partial input (e.g. "1/", trailing decimal separator) can
+                  // still be typed without being reset mid-way.
+                  if (parsedValue !== null && parsedValue > available) {
+                    setText(formatUnits(available));
+                    return;
+                  }
+                  setText(value);
+                }}
                 onBlur={() => {
                   if (text.trim() === "") setText("0");
                 }}
