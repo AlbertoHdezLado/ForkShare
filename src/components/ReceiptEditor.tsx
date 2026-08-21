@@ -44,7 +44,7 @@ export function ReceiptEditor({
       {
         id: newItemId(),
         name: "",
-        quantity: 1,
+        quantity: 0,
         unitPriceCents: 0,
         state: "editado",
       },
@@ -56,11 +56,22 @@ export function ReceiptEditor({
       <p className="text-center text-xl font-bold text-accent">
         Revisa los productos
       </p>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1 text-xs text-zinc-500">
-        <span>Fiabilidad de la lectura:</span>
-        <Legend color="bg-success-card-bg border-success-solid" label="alta" />
-        <Legend color="bg-warning-card-bg border-warning-solid" label="baja" />
-        <Legend color="bg-info-card-bg border-info-solid" label="editado" />
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-1 text-xs text-zinc-500">
+        <Legend
+          color="bg-success-card-bg border-success-solid text-success-foreground"
+          icon="✓"
+          label="FIABILIDAD ALTA"
+        />
+        <Legend
+          color="bg-warning-card-bg border-warning-solid text-warning-foreground"
+          icon="⚠"
+          label="FIABILIDAD BAJA"
+        />
+        <Legend
+          color="bg-info-card-bg border-info-solid text-info-foreground"
+          icon="✎"
+          label="PRODUCTO EDITADO"
+        />
       </div>
       <div className="flex flex-col">
         {/* En móvil cada línea ya lleva sus propias etiquetas (Uds./Precio/Total) */}
@@ -160,14 +171,20 @@ export function ReceiptEditor({
 
 function Legend({
   color,
+  icon,
   label,
 }: {
   readonly color: string;
+  readonly icon: string;
   readonly label: string;
 }) {
   return (
-    <span className="flex items-center gap-1">
-      <span className={`inline-block h-3 w-3 rounded border ${color}`} />
+    <span
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold ${color}`}
+    >
+      <span aria-hidden="true" className="text-sm leading-none">
+        {icon}
+      </span>
       {label}
     </span>
   );

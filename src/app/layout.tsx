@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MiTicket",
+  title: "miTicket",
   description: "Escanea el ticket y que cada uno marque lo que ha consumido.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MiTicket",
+    title: "miTicket",
   },
 };
 

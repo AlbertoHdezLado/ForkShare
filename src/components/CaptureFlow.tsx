@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getOcrProvider, preprocessReceiptImage } from "@/lib/ocr";
 import { warpToRectangle, type Quad } from "@/lib/ocr/perspective";
 import { parseReceipt } from "@/lib/receipt/parser";
@@ -13,8 +13,10 @@ import { PersonTotals } from "@/components/PersonTotals";
 import { formatCents } from "@/lib/money";
 import {
   buildSplitClaims,
+  removeParticipantClaims,
   selectDefaultItemForParticipant,
   setClaimChoice,
+  unitsTakenByAll,
   type ClaimChoice,
   type LocalClaims,
 } from "@/lib/local-claims";
@@ -58,10 +60,20 @@ export function CaptureFlow() {
   const [confirmedKeys, setConfirmedKeys] = useState<string[]>([]);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [localResult, setLocalResult] = useState<SplitResult | null>(null);
+  const [showUnclaimedPrompt, setShowUnclaimedPrompt] = useState(false);
   const [showBillInRoster, setShowBillInRoster] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
     "idle",
   );
+
+  useEffect(() => {
+    if (
+      localStage === "names" &&
+      !participants.some((participant) => participant.name.trim())
+    ) {
+      participantInputRefs.current[0]?.focus();
+    }
+  }, [localStage, participants]);
 
   // Once diners start picking their items, the global bill is only reachable
   // through the "edit bill" toggle in the names roster, not shown by default.
@@ -194,11 +206,7 @@ export function CaptureFlow() {
     const key = participants[index]?.key;
     setParticipants((prev) => prev.filter((_, i) => i !== index));
     if (!key) return;
-    setClaims((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
+    setClaims((prev) => removeParticipantClaims(prev, key));
     setConfirmedKeys((prev) => prev.filter((k) => k !== key));
   }
 
@@ -207,9 +215,13 @@ export function CaptureFlow() {
     participantKeys: readonly string[],
     choice: ClaimChoice | null,
   ) {
+    // La elección la crea el participante que tiene el turno: se replica en
+    // el grupo entero pero sigue siendo suya, sin pisar lo que ya tenían.
+    const owner = activeKey;
+    if (!owner) return;
     setClaims((prev) =>
       participantKeys.reduce(
-        (acc, key) => setClaimChoice(acc, key, itemId, choice),
+        (acc, key) => setClaimChoice(acc, key, itemId, owner, choice),
         prev,
       ),
     );
@@ -224,7 +236,19 @@ export function CaptureFlow() {
     setLocalStage("roster");
   }
 
+  function finishRoster() {
+    const unclaimed = items.filter(
+      (item) => unitsTakenByAll(item, claims) < item.quantity,
+    );
+    if (unclaimed.length > 0) {
+      setShowUnclaimedPrompt(true);
+      return;
+    }
+    computeLocalResult();
+  }
+
   function computeLocalResult() {
+    setShowUnclaimedPrompt(false);
     const cleanParticipants = participants.filter((p) => p.name.trim());
 
     const result = computeSplit({
@@ -254,10 +278,25 @@ export function CaptureFlow() {
     status === "recognizing" ||
     status === "parsing";
   const namedParticipants = participants.filter((p) => p.name.trim());
+  const nameOccurrences = new Map<string, number>();
+  for (const participant of namedParticipants) {
+    const normalizedName = normalizeParticipantName(participant.name);
+    nameOccurrences.set(
+      normalizedName,
+      (nameOccurrences.get(normalizedName) ?? 0) + 1,
+    );
+  }
+  const duplicateNames = new Set(
+    Array.from(nameOccurrences.entries())
+      .filter(([, count]) => count > 1)
+      .map(([name]) => name),
+  );
   const hasDuplicateNames =
-    new Set(namedParticipants.map((p) => normalizeParticipantName(p.name))).size !==
-    namedParticipants.length;
+    duplicateNames.size > 0;
   const canContinueFromNames = namedParticipants.length >= 2 && !hasDuplicateNames;
+  const unclaimedItems = items.filter(
+    (item) => unitsTakenByAll(item, claims) < item.quantity,
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
@@ -267,7 +306,7 @@ export function CaptureFlow() {
             srcSet="/logo-dark.svg"
             media="(prefers-color-scheme: dark)"
           />
-          <img src="/logo-light.svg" alt="MiTicket" className="h-16 w-auto" />
+          <img src="/logo-light.svg" alt="miTicket" className="h-16 w-auto" />
         </picture>
         {!showEditor && !showCrop && (
           <>
@@ -492,16 +531,6 @@ export function CaptureFlow() {
                       onChange={(e) => {
                         const value = e.target.value.toUpperCase();
                         setParticipants((prev) => {
-                          const normalizedValue = normalizeParticipantName(value);
-                          const isDuplicate =
-                            normalizedValue.length > 0 &&
-                            prev.some(
-                              (p, i) =>
-                                i !== index &&
-                                normalizeParticipantName(p.name) === normalizedValue,
-                            );
-                          if (isDuplicate) return prev;
-
                           const next = prev.map((p, i) =>
                             i === index ? { ...p, name: value } : p,
                           );
@@ -523,7 +552,13 @@ export function CaptureFlow() {
                       }}
                       placeholder={`Participante ${index + 1}`}
                       enterKeyHint="next"
-                      className="min-w-0 flex-1 rounded border-2 border-primary/75 bg-transparent px-3 py-2 text-sm uppercase shadow-[0_0_0_1px_rgba(34,197,94,0.18)] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/35 dark:border-primary/80"
+                      className={`min-w-0 flex-1 rounded border-2 bg-transparent px-3 py-2 text-sm uppercase focus:outline-none focus:ring-2 ${
+                        duplicateNames.has(
+                          normalizeParticipantName(participant.name),
+                        )
+                          ? "border-red-500/85 text-red-700 shadow-[0_0_0_1px_rgba(239,68,68,0.22)] focus:border-red-500 focus:ring-red-500/35 dark:border-red-400/85 dark:text-red-300"
+                          : "border-primary/75 shadow-[0_0_0_1px_rgba(34,197,94,0.18)] focus:border-primary focus:ring-primary/35 dark:border-primary/80"
+                      }`}
                     />
                     {!isPendingSlot && (
                       <button
@@ -559,17 +594,57 @@ export function CaptureFlow() {
               participants={namedParticipants}
               confirmedKeys={confirmedKeys}
               onSelect={(key) => {
-                setClaims((prev) =>
-                  selectDefaultItemForParticipant(items, prev, key),
-                );
                 setActiveKey(key);
                 setLocalStage("claim");
               }}
-              onFinish={computeLocalResult}
+              onFinish={finishRoster}
               onEditNames={() => setLocalStage("names")}
               showBill={showBillInRoster}
               onToggleBill={() => setShowBillInRoster((prev) => !prev)}
             />
+          )}
+
+          {showUnclaimedPrompt && (
+            <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
+              <button
+                type="button"
+                aria-label="Cerrar"
+                onClick={() => setShowUnclaimedPrompt(false)}
+                className="absolute inset-0 bg-black/70"
+              />
+              <div className="relative flex w-full max-w-sm flex-col gap-3 rounded-lg border border-accent/30 bg-background p-4 shadow-2xl">
+                <p className="text-center text-lg font-bold text-accent">
+                  Quedan productos sin pagar
+                </p>
+                <ul className="list-disc pl-5 text-sm text-accent/80">
+                  {unclaimedItems.map((item) => (
+                    <li key={item.id}>
+                      {item.name || "Producto sin nombre"} — {item.quantity} ud.
+                      × {formatCents(item.unitPriceCents, "EUR")}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-center text-sm text-accent/70">
+                  ¿Quieres revisarlos o dividirlos entre todos a partes iguales?
+                </p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowUnclaimedPrompt(false)}
+                    className="rounded-full border border-accent px-5 py-3 text-sm font-medium text-accent hover:bg-accent/10"
+                  >
+                    Revisar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={computeLocalResult}
+                    className="rounded-full bg-accent px-5 py-3 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+                  >
+                    Dividir entre todos
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {localStage === "claim" && activeKey && (

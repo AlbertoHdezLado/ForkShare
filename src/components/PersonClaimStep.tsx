@@ -8,14 +8,19 @@
 // elección la que se esté editando).
 
 import { useState } from "react";
+import { Users } from "lucide-react";
 import { formatCents } from "@/lib/money";
 import type { EditableItem } from "@/lib/receipt/editable";
 import {
+  claimedUnits,
   choiceGroup,
   choiceTotalUnits,
   choiceUnits,
+  entriesFor,
   isItemFullyClaimedByOthers,
+  ownChoice,
   unitsTakenByOthers,
+  type ClaimEntry,
   type ClaimChoice,
   type LocalClaims,
 } from "@/lib/local-claims";
@@ -51,12 +56,10 @@ export function PersonClaimStep({
   onBack,
 }: PersonClaimStepProps) {
   const [openItemId, setOpenItemId] = useState<string | null>(null);
-  const own = claims[participantKey] ?? {};
 
   const selectedCents = items.reduce((sum, item) => {
-    const choice = own[item.id];
-    if (!choice) return sum;
-    return sum + Math.round(choiceUnits(item, choice) * item.unitPriceCents);
+    const units = claimedUnits(item, claims, participantKey);
+    return sum + Math.round(units * item.unitPriceCents);
   }, 0);
 
   const visibleItems = items.filter(
@@ -77,7 +80,7 @@ export function PersonClaimStep({
           <ItemCard
             key={item.id}
             item={item}
-            choice={own[item.id] ?? null}
+            entries={entriesFor(claims, participantKey, item.id)}
             onClick={() => setOpenItemId(item.id)}
           />
         ))}
@@ -103,22 +106,15 @@ export function PersonClaimStep({
       <button
         type="button"
         onClick={onConfirm}
-        className="rounded-full bg-accent px-5 py-3 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+        className="mt-2 rounded-full bg-accent px-5 py-3 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
       >
-        Verificar y pasar el móvil
-      </button>
-      <button
-        type="button"
-        onClick={onBack}
-        className="rounded-full border border-accent px-5 py-2 text-sm font-medium text-accent hover:bg-accent/10"
-      >
-        Volver a la lista
+        Confirmar
       </button>
 
       {openItem && (
         <ItemClaimModal
           item={openItem}
-          choice={own[openItem.id] ?? null}
+          choice={ownChoice(claims, participantKey, openItem.id)}
           others={others}
           remainingUnits={unitsTakenByOthers(openItem, claims, participantKey)}
           selfKey={participantKey}
@@ -126,7 +122,10 @@ export function PersonClaimStep({
           onApply={(participantKeys, choice) => {
             // Si el grupo cambia (p. ej. se quita a alguien), su elección
             // anterior queda obsoleta y hay que borrarla explícitamente.
-            const previousGroup = choiceGroup(participantKey, own[openItem.id]);
+            const previousGroup = choiceGroup(
+              participantKey,
+              ownChoice(claims, participantKey, openItem.id),
+            );
             const staleKeys = previousGroup.filter(
               (key) => key !== participantKey && !participantKeys.includes(key),
             );
@@ -142,13 +141,15 @@ export function PersonClaimStep({
 
 interface ItemCardProps {
   readonly item: EditableItem;
-  readonly choice: ClaimChoice | null;
+  readonly entries: readonly ClaimEntry[];
   readonly onClick: () => void;
 }
 
-function ItemCard({ item, choice, onClick }: ItemCardProps) {
-  const units = choice ? choiceUnits(item, choice) : 0;
-  const hasChoice = choice !== null;
+function ItemCard({ item, entries, onClick }: ItemCardProps) {
+  const hasChoice = entries.length > 0;
+  const label = hasChoice
+    ? `${entries.map((entry) => formatEntryUnits(item, entry)).join(" + ")} uds.`
+    : "Seleccionar";
 
   return (
     <button
@@ -175,10 +176,21 @@ function ItemCard({ item, choice, onClick }: ItemCardProps) {
             : "border border-dashed border-zinc-300 text-zinc-400 dark:border-zinc-700"
         }`}
       >
-        {hasChoice ? `${formatUnits(units)} uds.` : "Sin marcar"}
+        {label}
       </span>
     </button>
   );
+}
+
+function formatEntryUnits(item: EditableItem, entry: ClaimEntry): string {
+  if (entry.choice.mode === "units") {
+    const groupSize = Math.max(entry.choice.group?.length ?? 1, 1);
+    const totalUnits = choiceTotalUnits(item, entry.choice);
+    if (groupSize > 1 && Math.abs(totalUnits - 1) < 1e-9) {
+      return `1/${groupSize}`;
+    }
+  }
+  return formatUnits(choiceUnits(item, entry.choice));
 }
 
 type ModalStage = "units" | "shared-people";
@@ -224,15 +236,19 @@ function ItemClaimModal({
     item.quantity - takenByOthers + otherGroupMembersUnits,
     0,
   );
+  const minimumUnits = available > 0 ? 1 : 0;
 
-  const [text, setText] = useState(
-    currentGroupUnits > 0 ? formatUnits(currentGroupUnits) : "",
-  );
+  const [text, setText] = useState(() => {
+    if (choice) {
+      return currentGroupUnits > 0 ? formatUnits(currentGroupUnits) : "";
+    }
+    return "1";
+  });
   const parsed = parseUnitsInput(text);
-  const units = parsed === null ? null : clamp(parsed, 0, available);
+  const units = parsed === null ? null : clamp(parsed, minimumUnits, available);
 
   function setUnits(next: number) {
-    setText(formatUnits(clamp(next, 0, available)));
+    setText(formatUnits(clamp(next, minimumUnits, available)));
   }
 
   function toggleShared(key: string) {
@@ -250,13 +266,17 @@ function ItemClaimModal({
         className="absolute inset-0 bg-black/70"
       />
       <div className="relative flex w-full max-w-sm flex-col gap-3 rounded-lg border border-accent/30 bg-background p-4 shadow-2xl">
+        <button
+          type="button"
+          aria-label="Cancelar"
+          onClick={onClose}
+          className="absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full text-3xl leading-none text-accent hover:bg-accent/10 hover:text-accent-hover"
+        >
+          ×
+        </button>
         <div className="flex flex-col items-center gap-0.5 text-center">
           <p className="text-lg font-bold text-accent">
             {item.name || "(sin nombre)"}
-          </p>
-          <p className="text-xs text-zinc-500">
-            {formatUnits(Math.max(available - (units ?? 0), 0))}/
-            {formatUnits(item.quantity)} disponibles
           </p>
         </div>
 
@@ -265,8 +285,9 @@ function ItemClaimModal({
             <div className="flex items-center justify-center gap-3">
               <button
                 type="button"
+                disabled={units === null || units <= minimumUnits}
                 onClick={() => setUnits((units ?? 0) - 1)}
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-xl font-semibold dark:border-zinc-700"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-primary text-xl font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
                 −
               </button>
@@ -289,8 +310,8 @@ function ItemClaimModal({
                     setText(formatUnits(available));
                     return;
                   }
-                  if (parsedValue !== null && parsedValue < 0) {
-                    setText("0");
+                  if (parsedValue !== null && parsedValue < minimumUnits) {
+                    setText(formatUnits(minimumUnits));
                     return;
                   }
                   setText(value);
@@ -299,12 +320,13 @@ function ItemClaimModal({
                   if (text.trim() === "") setText("0");
                 }}
                 placeholder="0"
-                className="w-20 rounded border border-zinc-300 bg-transparent px-2 py-2 text-center text-lg tabular-nums outline-none dark:border-zinc-700"
+                className="w-20 rounded border border-primary bg-transparent px-2 py-2 text-center text-lg tabular-nums text-primary outline-none focus:outline-primary"
               />
               <button
                 type="button"
+                disabled={units === null || units >= available}
                 onClick={() => setUnits((units ?? 0) + 1)}
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-xl font-semibold dark:border-zinc-700"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-primary text-xl font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
                 +
               </button>
@@ -313,7 +335,7 @@ function ItemClaimModal({
             <button
               type="button"
               onClick={() => setUnits(available)}
-              className="self-center rounded-full border border-zinc-300 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                className="self-center rounded-full border border-primary px-3 py-1 text-xs text-primary"
             >
               Seleccionar todo
             </button>
@@ -323,8 +345,9 @@ function ItemClaimModal({
                 type="button"
                 disabled={units === null || units <= 0}
                 onClick={() => setStage("shared-people")}
-                className="mt-3 rounded-full border border-accent px-4 py-2.5 text-sm font-medium text-accent disabled:opacity-50"
+                className="mt-3 inline-flex self-center items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
               >
+                <Users aria-hidden="true" size={18} strokeWidth={2} />
                 Compartir
               </button>
             )}
@@ -335,7 +358,7 @@ function ItemClaimModal({
               onClick={() =>
                 onApply([selfKey], { mode: "units", count: units ?? 0 })
               }
-              className="rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground disabled:opacity-50"
+              className="mt-2 rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
               Confirmar
             </button>
@@ -344,25 +367,18 @@ function ItemClaimModal({
               <button
                 type="button"
                 onClick={() => onApply([selfKey], null)}
-                className="rounded-full border border-zinc-300 px-4 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                className="rounded-full border border-red-500/60 px-4 py-2 text-sm text-red-700 hover:bg-red-500/10 dark:border-red-400/60 dark:text-red-300"
               >
                 Quitar mi selección
               </button>
             )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full px-4 py-2 text-sm text-zinc-500"
-            >
-              Cancelar
-            </button>
           </div>
         )}
 
         {stage === "shared-people" && (
           <div className="flex flex-col gap-2">
-            <p className="text-xs text-zinc-500">
-              ¿Con quién has compartido {formatUnits(units ?? 0)} uds.?
+            <p className="text-center text-xs text-zinc-500">
+              ¿Con quién has compartido?
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {others.map((person) => {
@@ -400,7 +416,7 @@ function ItemClaimModal({
                   group: [selfKey, ...sharedWith],
                 })
               }
-              className="rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground disabled:opacity-50"
+              className="mt-2 rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
               Confirmar
             </button>

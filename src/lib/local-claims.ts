@@ -16,8 +16,19 @@ export type ClaimChoice =
 
 export type ClaimMode = ClaimChoice["mode"] | "none";
 
-/** clave de participante -> id de línea -> elección */
-export type LocalClaims = Record<string, Record<string, ClaimChoice>>;
+/**
+ * Una elección dentro de la lista de una persona. `owner` es quien la creó: una
+ * elección compartida se replica en todos los miembros del grupo, pero solo su
+ * autor puede editarla o borrarla. Así una persona puede acumular a la vez lo
+ * que marcó en solitario y lo que otro compartió después con ella.
+ */
+export interface ClaimEntry {
+  readonly owner: string;
+  readonly choice: ClaimChoice;
+}
+
+/** clave de participante -> id de línea -> elecciones que le afectan */
+export type LocalClaims = Record<string, Record<string, ClaimEntry[]>>;
 
 /** Unidades totales (antes de repartir) que representa una elección. */
 export function choiceTotalUnits(
@@ -53,13 +64,36 @@ export function choiceUnits(item: EditableItem, choice: ClaimChoice): number {
   }
 }
 
+/** Todas las elecciones que afectan a una persona en una línea. */
+export function entriesFor(
+  claims: LocalClaims,
+  participantKey: string,
+  itemId: string,
+): readonly ClaimEntry[] {
+  return claims[participantKey]?.[itemId] ?? [];
+}
+
+/** La elección que creó esa persona (la única que puede editar), si existe. */
+export function ownChoice(
+  claims: LocalClaims,
+  participantKey: string,
+  itemId: string,
+): ClaimChoice | null {
+  const entry = entriesFor(claims, participantKey, itemId).find(
+    (candidate) => candidate.owner === participantKey,
+  );
+  return entry?.choice ?? null;
+}
+
 export function claimedUnits(
   item: EditableItem,
   claims: LocalClaims,
   participantKey: string,
 ): number {
-  const choice = claims[participantKey]?.[item.id];
-  return choice ? choiceUnits(item, choice) : 0;
+  return entriesFor(claims, participantKey, item.id).reduce(
+    (total, entry) => total + choiceUnits(item, entry.choice),
+    0,
+  );
 }
 
 /** Unidades de una línea ya marcadas por el resto de participantes. */
@@ -76,35 +110,82 @@ export function unitsTakenByOthers(
   return total;
 }
 
+/**
+ * Unidades ya marcadas descontando las elecciones creadas por `ownerKey`: son
+ * las que quedan realmente bloqueadas mientras esa persona reedita su propia
+ * elección, porque la suya se reemplaza por completo en todo el grupo.
+ */
+export function unitsTakenExcludingOwner(
+  item: EditableItem,
+  claims: LocalClaims,
+  ownerKey: string,
+): number {
+  let total = 0;
+  for (const key of Object.keys(claims)) {
+    for (const entry of entriesFor(claims, key, item.id)) {
+      if (entry.owner === ownerKey) continue;
+      total += choiceUnits(item, entry.choice);
+    }
+  }
+  return total;
+}
+
 export function setClaimChoice(
   claims: LocalClaims,
   participantKey: string,
   itemId: string,
+  owner: string,
   choice: ClaimChoice | null,
 ): LocalClaims {
   const forPerson = { ...(claims[participantKey] ?? {}) };
-  if (choice === null) delete forPerson[itemId];
-  else forPerson[itemId] = choice;
+  const fromOthers = (forPerson[itemId] ?? []).filter(
+    (entry) => entry.owner !== owner,
+  );
+  const next = choice === null ? fromOthers : [...fromOthers, { owner, choice }];
+  if (next.length === 0) delete forPerson[itemId];
+  else forPerson[itemId] = next;
   return { ...claims, [participantKey]: forPerson };
 }
 
-/** Marca una unidad de la primera línea disponible al iniciar un turno vacío. */
+/** Al eliminar a un participante se borran sus elecciones y sale de los grupos. */
+export function removeParticipantClaims(
+  claims: LocalClaims,
+  removedKey: string,
+): LocalClaims {
+  const next: LocalClaims = {};
+  for (const key of Object.keys(claims)) {
+    if (key === removedKey) continue;
+    const byItem: Record<string, ClaimEntry[]> = {};
+    for (const [itemId, entries] of Object.entries(claims[key])) {
+      const kept = entries
+        .filter((entry) => entry.owner !== removedKey)
+        .map((entry) => {
+          const { choice } = entry;
+          if (choice.mode !== "units" || !choice.group) return entry;
+          return {
+            owner: entry.owner,
+            choice: {
+              ...choice,
+              group: choice.group.filter((member) => member !== removedKey),
+            },
+          };
+        });
+      if (kept.length > 0) byItem[itemId] = kept;
+    }
+    next[key] = byItem;
+  }
+  return next;
+}
+
+/** No se marca ninguna línea por defecto al iniciar un turno vacío. */
 export function selectDefaultItemForParticipant(
   items: readonly EditableItem[],
   claims: LocalClaims,
   participantKey: string,
 ): LocalClaims {
-  if (Object.keys(claims[participantKey] ?? {}).length > 0) return claims;
-
-  const item = items.find(
-    (candidate) => candidate.quantity - unitsTakenByAll(candidate, claims) >= 1,
-  );
-  return item
-    ? setClaimChoice(claims, participantKey, item.id, {
-        mode: "units",
-        count: 1,
-      })
-    : claims;
+  void items;
+  void participantKey;
+  return claims;
 }
 
 /** Unidades de una línea ya marcadas por cualquier participante (incluida esta persona). */
@@ -129,7 +210,7 @@ export function isItemFullyClaimedByOthers(
   claims: LocalClaims,
   participantKey: string,
 ): boolean {
-  if (claims[participantKey]?.[item.id]) return false;
+  if (entriesFor(claims, participantKey, item.id).length > 0) return false;
   return unitsTakenByAll(item, claims) >= item.quantity;
 }
 

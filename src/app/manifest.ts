@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MiTicket",
-    short_name: "MiTicket",
+    name: "miTicket",
+    short_name: "miTicket",
     description: "Escanea el ticket y que cada uno marque lo que ha consumido.",
     start_url: "/",
     display: "standalone",

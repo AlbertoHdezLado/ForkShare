@@ -56,8 +56,8 @@ export function ItemRow({ item, onChange, onRemove }: ItemRowProps) {
   );
 
   // Igual que los campos de dinero: se guarda el texto propio mientras el
-  // input tiene el foco para poder borrarlo del todo, y solo se aplica el
-  // valor por defecto (1) al perder el foco si se ha dejado vacío.
+  // input tiene el foco para poder borrarlo del todo, y si se deja vacío se
+  // reaplica el valor 0 sin forzarlo a 1.
   const [quantityText, setQuantityText] = useState(String(item.quantity));
   const [quantityFocused, setQuantityFocused] = useState(false);
   useEffect(() => {
@@ -121,21 +121,21 @@ export function ItemRow({ item, onChange, onRemove }: ItemRowProps) {
           <input
             type="number"
             inputMode="numeric"
-            min={1}
+            min={0}
             value={quantityText}
             onFocus={() => setQuantityFocused(true)}
             onChange={(e) => {
               const value = e.target.value;
               setQuantityText(value);
               const parsed = Number.parseInt(value, 10);
-              if (Number.isFinite(parsed) && parsed > 0)
+              if (Number.isFinite(parsed) && parsed >= 0)
                 edit({ quantity: parsed });
             }}
             onBlur={() => {
               setQuantityFocused(false);
               const parsed = Number.parseInt(quantityText, 10);
               const quantity =
-                Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+                Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
               setQuantityText(String(quantity));
               if (quantity !== item.quantity) edit({ quantity });
             }}
