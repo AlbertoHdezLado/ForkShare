@@ -279,9 +279,15 @@ function ItemClaimModal({
                   const parsedValue = parseUnitsInput(value);
                   // Clamp only once the input resolves to a valid number, so
                   // partial input (e.g. "1/", trailing decimal separator) can
-                  // still be typed without being reset mid-way.
+                  // still be typed without being reset mid-way. Out-of-range
+                  // values are snapped to the limit immediately, rather than
+                  // letting an invalid value sit until blur.
                   if (parsedValue !== null && parsedValue > available) {
                     setText(formatUnits(available));
+                    return;
+                  }
+                  if (parsedValue !== null && parsedValue < 0) {
+                    setText("0");
                     return;
                   }
                   setText(value);
