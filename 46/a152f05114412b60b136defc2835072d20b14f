@@ -1,0 +1,19 @@
+src/components/CaptureFlow.tsx
+  s_0eadd4f74d8557::t_c3b835535ceee6 255-259,494-503,525,543,548-552,558,577-580,660-663
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "46a152f05114412b60b136defc2835072d20b14f",
+  "prompts": {},
+  "sessions": {
+    "s_0eadd4f74d8557": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "de3cc349-7d1d-4147-96e5-6ca8c897c815",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
