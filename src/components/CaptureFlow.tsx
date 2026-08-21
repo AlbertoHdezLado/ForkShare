@@ -13,6 +13,7 @@ import { PersonTotals } from "@/components/PersonTotals";
 import { formatCents } from "@/lib/money";
 import {
   buildSplitClaims,
+  selectDefaultItemForParticipant,
   setClaimChoice,
   type ClaimChoice,
   type LocalClaims,
@@ -558,6 +559,9 @@ export function CaptureFlow() {
               participants={namedParticipants}
               confirmedKeys={confirmedKeys}
               onSelect={(key) => {
+                setClaims((prev) =>
+                  selectDefaultItemForParticipant(items, prev, key),
+                );
                 setActiveKey(key);
                 setLocalStage("claim");
               }}
