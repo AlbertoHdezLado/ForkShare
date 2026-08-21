@@ -1,0 +1,24 @@
+src/components/CaptureFlow.tsx
+  h_16f4373190dfe3 4,10,17-19,33,47,49-54,79-131,142-159,166-168,171-174,177,181-183,223-258,306-339,341-342,446-447,452-511,541,552-594,858-917,1012-1015
+src/components/CropStep.test.tsx
+  h_16f4373190dfe3 1-36
+src/components/CropStep.tsx
+  h_16f4373190dfe3 10,26,35-40,42,48-56,62-67,81-104,106-110,114-126,128-140,166-167,177,195,206-207,218-220
+src/components/PersonClaimStep.tsx
+  h_16f4373190dfe3 268,337,339,405,407
+src/components/PersonTotals.tsx
+  h_16f4373190dfe3 44-51,55
+src/lib/session-storage.ts
+  h_16f4373190dfe3 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "cd38349b3d4e58245494fa7990c83722a17bd7f8",
+  "prompts": {},
+  "humans": {
+    "h_16f4373190dfe3": {
+      "author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
