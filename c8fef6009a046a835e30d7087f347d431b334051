@@ -1,0 +1,19 @@
+public/logo-dark.svg
+  s_9fd7455b32e893::t_289a7c923e2c82 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c8fef6009a046a835e30d7087f347d431b334051",
+  "prompts": {},
+  "sessions": {
+    "s_9fd7455b32e893": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "5d2d9aae-c138-40f5-8a06-1f109382afc2",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}

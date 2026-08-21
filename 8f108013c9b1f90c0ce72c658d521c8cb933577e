@@ -1,0 +1,33 @@
+package.json
+  s_597513b38fd1de::t_845dfd6bed6e4e 2
+public/icon.svg
+  s_475b137ab45dfd::t_663470f989f204 2-4
+public/logo-dark.svg
+  s_475b137ab45dfd::t_0551dfe6d2b8ef 2-4
+public/logo-light.svg
+  s_475b137ab45dfd::t_5cf2c9586c73af 2-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "8f108013c9b1f90c0ce72c658d521c8cb933577e",
+  "prompts": {},
+  "sessions": {
+    "s_475b137ab45dfd": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "bbb377a1-fd8d-4dd1-b842-eecffac19fdc",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    },
+    "s_597513b38fd1de": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "20f19448-7b6f-451c-a6ca-02b604b9b124",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}

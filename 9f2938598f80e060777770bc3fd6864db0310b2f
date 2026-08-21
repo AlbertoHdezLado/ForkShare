@@ -1,0 +1,19 @@
+package-lock.json
+  s_76aed97ed09e1f::t_916c48bf183d89 6337-6339,6348,6351
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9f2938598f80e060777770bc3fd6864db0310b2f",
+  "prompts": {},
+  "sessions": {
+    "s_76aed97ed09e1f": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "782ea1d4-1295-47e5-bfff-5a1f5df0530a",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernández Lado <albertohla@ext.inditex.com>"
+    }
+  }
+}

@@ -1,0 +1,93 @@
+next-env.d.ts
+  s_5085fb889d1673::t_8fe0fa13fca5ec 1-7
+pnpm-lock.yaml
+  s_5085fb889d1673::t_8a82ce1118b76b 1-7160
+pnpm-workspace.yaml
+  s_5085fb889d1673::t_50184dc8051028 1-3
+public/icon.svg
+  s_475b137ab45dfd::t_ca1a4e0ba5e672 1-5
+public/logo-dark.svg
+  s_475b137ab45dfd::t_25cd7cf4e97145 1-5
+public/logo-light.svg
+  s_475b137ab45dfd::t_cc352427020617 1-5
+public/sw.js
+  s_5085fb889d1673::t_c1f5f44edba046 1-71
+scripts/generate-icons.mjs
+  s_5085fb889d1673::t_4dade953e06078 1-61
+src/app/api/ocr/route.ts
+  s_5085fb889d1673::t_2384f9e49cf7ca 1-141
+src/app/debug-confidence/page.tsx
+  s_5085fb889d1673::t_c95c0432a040a9 1-65
+src/app/globals.css
+  s_5085fb889d1673::t_a70681af552cfd 1-117
+src/app/layout.tsx
+  s_5085fb889d1673::t_a301a9dcfecfe8 1-48
+src/app/manifest.ts
+  s_5085fb889d1673::t_6a556ba820715a 1-40
+src/components/CaptureFlow.tsx
+  s_5085fb889d1673::t_5848f4d0a4145a 1-638
+src/components/CropStep.tsx
+  s_5085fb889d1673::t_1d0d753c22ca6d 1-179
+src/components/ItemRow.tsx
+  s_5085fb889d1673::t_3eb3f7f70a2b37 1-174
+src/components/OfflineBanner.tsx
+  s_5085fb889d1673::t_37508b92c0adb3 1-30
+src/components/ParticipantRoster.tsx
+  s_5085fb889d1673::t_28d737df29e440 1-99
+src/components/PersonClaimStep.tsx
+  s_5085fb889d1673::t_0518430dde12cf 1-454
+src/components/PersonTotals.tsx
+  s_5085fb889d1673::t_14cc03b4699801 1-110
+src/components/ReceiptEditor.tsx
+  s_5085fb889d1673::t_efcebfabb84d50 1-215
+src/lib/local-claims.test.ts
+  s_5085fb889d1673::t_a7726291830d58 1-140
+src/lib/local-claims.ts
+  s_5085fb889d1673::t_2417ad982173af 1-130
+src/lib/ocr/index.ts
+  s_5085fb889d1673::t_548ef56cc8cc84 1-23
+src/lib/ocr/perspective.ts
+  s_5085fb889d1673::t_ef068a18030fc5 1-191
+src/lib/receipt/editable.ts
+  s_5085fb889d1673::t_226162ff8ab2e4 1-71
+src/lib/receipt/parser.test.ts
+  s_022a11cf293820::t_fa74dc7d1bebd5 1-209
+src/lib/receipt/parser.ts
+  s_5085fb889d1673::t_a9da76ae496bf8 1-533
+src/lib/receipt/types.ts
+  s_5085fb889d1673::t_ad721525aac343 1-42
+src/lib/split.ts
+  s_5085fb889d1673::t_abf31f03612ce4 1-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "3e6771d7b0b1bd32b61c5d322ee851da1a33da8e",
+  "prompts": {},
+  "sessions": {
+    "s_022a11cf293820": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "fcf3e8a7-f795-48a3-ab2a-314b8050ea36",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    },
+    "s_475b137ab45dfd": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "bbb377a1-fd8d-4dd1-b842-eecffac19fdc",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    },
+    "s_5085fb889d1673": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "5e5a766e-b82d-47ca-8683-b582a5aa3bd0",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}

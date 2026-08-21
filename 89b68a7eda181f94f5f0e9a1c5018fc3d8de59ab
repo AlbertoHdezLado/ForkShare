@@ -1,0 +1,14 @@
+src/components/PersonClaimStep.tsx
+  h_16f4373190dfe3 440
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "89b68a7eda181f94f5f0e9a1c5018fc3d8de59ab",
+  "prompts": {},
+  "humans": {
+    "h_16f4373190dfe3": {
+      "author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
