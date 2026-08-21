@@ -1,0 +1,14 @@
+src/components/CaptureFlow.tsx
+  h_16f4373190dfe3 16,562-564
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "4037d544edd402cb2216578cb9457795e3b18756",
+  "prompts": {},
+  "humans": {
+    "h_16f4373190dfe3": {
+      "author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
