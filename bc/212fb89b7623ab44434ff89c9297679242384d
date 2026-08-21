@@ -1,0 +1,21 @@
+src/lib/local-claims.test.ts
+  s_6a4da94db9c122::t_87ec82e4429f49 9,60-83
+src/lib/local-claims.ts
+  s_6a4da94db9c122::t_5a6f615349b95e 91-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "bc212fb89b7623ab44434ff89c9297679242384d",
+  "prompts": {},
+  "sessions": {
+    "s_6a4da94db9c122": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "6ff757b3-a61a-497c-9ef8-92055fa0bfb6",
+        "model": "unknown"
+      },
+      "human_author": "Alberto Hernandez Lado <albertohljob@gmail.com>"
+    }
+  }
+}
