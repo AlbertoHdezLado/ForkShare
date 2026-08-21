@@ -165,12 +165,12 @@ describe("parseReceipt", () => {
     });
   });
 
-  it("keeps only letters and numbers in detected product names", () => {
-    const words = receiptWords(["1 Cafe! #2* 3,50"]);
+  it("keeps letters, numbers, and periods in detected product names", () => {
+    const words = receiptWords(["1 Cafe. !#2* 3,50"]);
 
     const result = parseReceipt(words);
 
-    expect(result.items[0].name).toBe("CAFE 2");
+    expect(result.items[0].name).toBe("CAFE. 2");
   });
 
   it("reads a decimal-formatted leading quantity (e.g. '4,00') as a unit count", () => {

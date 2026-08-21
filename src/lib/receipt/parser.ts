@@ -380,8 +380,8 @@ function stripMatchedTokens(
   // Remove every money-looking token (prices), keeping the description text.
   result = result.replace(MONEY_TOKEN_RE, " ");
   // Product names may contain OCR punctuation and symbols; retain only text
-  // characters, digits, and their word separators.
-  result = result.replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+  // characters, digits, periods, and their word separators.
+  result = result.replace(/[^\p{L}\p{N}.\s]/gu, " ").replace(/\s+/g, " ").trim();
   return result;
 }
 
