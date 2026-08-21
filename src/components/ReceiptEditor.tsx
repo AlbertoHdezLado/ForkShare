@@ -184,13 +184,13 @@ function ExtraField({
 }) {
   const field = useMoneyField(cents, onChange);
   return (
-    <label className="flex items-center justify-between gap-2">
+    <label className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
       <span className="text-zinc-500">{label}</span>
       <input
         type="text"
         inputMode="decimal"
         {...field}
-        className="w-20 rounded border border-zinc-300 bg-transparent px-2 py-1 text-right dark:border-zinc-700"
+        className="w-20 self-end rounded border border-zinc-300 bg-transparent px-2 py-1 text-right sm:self-auto dark:border-zinc-700"
       />
     </label>
   );
