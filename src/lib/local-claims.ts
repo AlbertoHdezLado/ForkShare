@@ -88,6 +88,25 @@ export function setClaimChoice(
   return { ...claims, [participantKey]: forPerson };
 }
 
+/** Marca una unidad de la primera línea disponible al iniciar un turno vacío. */
+export function selectDefaultItemForParticipant(
+  items: readonly EditableItem[],
+  claims: LocalClaims,
+  participantKey: string,
+): LocalClaims {
+  if (Object.keys(claims[participantKey] ?? {}).length > 0) return claims;
+
+  const item = items.find(
+    (candidate) => candidate.quantity - unitsTakenByAll(candidate, claims) >= 1,
+  );
+  return item
+    ? setClaimChoice(claims, participantKey, item.id, {
+        mode: "units",
+        count: 1,
+      })
+    : claims;
+}
+
 /** Unidades de una línea ya marcadas por cualquier participante (incluida esta persona). */
 export function unitsTakenByAll(
   item: EditableItem,

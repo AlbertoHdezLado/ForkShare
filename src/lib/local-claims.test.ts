@@ -6,6 +6,7 @@ import {
   choiceUnits,
   claimedUnits,
   isItemFullyClaimedByOthers,
+  selectDefaultItemForParticipant,
   setClaimChoice,
   unitsTakenByOthers,
   type LocalClaims,
@@ -53,6 +54,30 @@ describe("setClaimChoice", () => {
     const withChoice: LocalClaims = { p1: { i1: { mode: "units", count: 2 } } };
     const after = setClaimChoice(withChoice, "p1", "i1", null);
     expect(after).toEqual({ p1: {} });
+  });
+});
+
+describe("selectDefaultItemForParticipant", () => {
+  it("marca una unidad de la primera línea disponible en un turno vacío", () => {
+    const claims = selectDefaultItemForParticipant([pizza], {}, "p1");
+    expect(claims).toEqual({ p1: { i1: { mode: "units", count: 1 } } });
+  });
+
+  it("salta líneas ya cubiertas y mantiene las elecciones existentes", () => {
+    const pasta = { ...pizza, id: "i2", name: "Pasta", quantity: 1 };
+    const coveredPizza: LocalClaims = {
+      p2: { i1: { mode: "units", count: 2 } },
+    };
+    expect(selectDefaultItemForParticipant([pizza, pasta], coveredPizza, "p1"))
+      .toEqual({
+        p1: { i2: { mode: "units", count: 1 } },
+        p2: { i1: { mode: "units", count: 2 } },
+      });
+
+    const existing: LocalClaims = { p1: { i1: { mode: "units", count: 2 } } };
+    expect(selectDefaultItemForParticipant([pizza], existing, "p1")).toBe(
+      existing,
+    );
   });
 });
 
