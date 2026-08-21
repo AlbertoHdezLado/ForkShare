@@ -252,6 +252,11 @@ export function CaptureFlow() {
     status === "preprocessing" ||
     status === "recognizing" ||
     status === "parsing";
+  const namedParticipants = participants.filter((p) => p.name.trim());
+  const hasDuplicateNames =
+    new Set(namedParticipants.map((p) => normalizeParticipantName(p.name))).size !==
+    namedParticipants.length;
+  const canContinueFromNames = namedParticipants.length >= 2 && !hasDuplicateNames;
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
@@ -486,6 +491,16 @@ export function CaptureFlow() {
                       onChange={(e) => {
                         const value = e.target.value.toUpperCase();
                         setParticipants((prev) => {
+                          const normalizedValue = normalizeParticipantName(value);
+                          const isDuplicate =
+                            normalizedValue.length > 0 &&
+                            prev.some(
+                              (p, i) =>
+                                i !== index &&
+                                normalizeParticipantName(p.name) === normalizedValue,
+                            );
+                          if (isDuplicate) return prev;
+
                           const next = prev.map((p, i) =>
                             i === index ? { ...p, name: value } : p,
                           );
@@ -507,7 +522,7 @@ export function CaptureFlow() {
                       }}
                       placeholder={`Participante ${index + 1}`}
                       enterKeyHint="next"
-                      className="min-w-0 flex-1 rounded border border-zinc-300 bg-transparent px-3 py-2 text-sm uppercase dark:border-zinc-700"
+                      className="min-w-0 flex-1 rounded border-2 border-primary/75 bg-transparent px-3 py-2 text-sm uppercase shadow-[0_0_0_1px_rgba(34,197,94,0.18)] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/35 dark:border-primary/80"
                     />
                     {!isPendingSlot && (
                       <button
@@ -525,17 +540,22 @@ export function CaptureFlow() {
               <button
                 type="button"
                 onClick={() => setLocalStage("roster")}
-                disabled={participants.filter((p) => p.name.trim()).length < 2}
+                disabled={!canContinueFromNames}
                 className="rounded-full bg-accent px-5 py-3 text-sm font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
               >
                 Continuar
               </button>
+              {hasDuplicateNames && (
+                <p className="text-center text-sm text-error-foreground">
+                  No se puede introducir el mismo nombre dos veces.
+                </p>
+              )}
             </div>
           )}
 
           {localStage === "roster" && (
             <ParticipantRoster
-              participants={participants.filter((p) => p.name.trim())}
+              participants={namedParticipants}
               confirmedKeys={confirmedKeys}
               onSelect={(key) => {
                 setActiveKey(key);
@@ -554,9 +574,10 @@ export function CaptureFlow() {
               participantName={
                 participants.find((p) => p.key === activeKey)?.name.trim() ?? ""
               }
-              participants={participants
-                .filter((p) => p.name.trim())
-                .map((p) => ({ key: p.key, name: p.name.trim() }))}
+              participants={namedParticipants.map((p) => ({
+                key: p.key,
+                name: p.name.trim(),
+              }))}
               items={items}
               claims={claims}
               onChange={handleClaimChange}
@@ -635,4 +656,8 @@ function sumByKind(
   return summary
     .filter((s) => s.kind === kind)
     .reduce((sum, s) => sum + s.amountCents, 0);
+}
+
+function normalizeParticipantName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toUpperCase();
 }
