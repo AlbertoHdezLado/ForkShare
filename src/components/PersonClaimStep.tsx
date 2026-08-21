@@ -265,7 +265,7 @@ function ItemClaimModal({
         onClick={onClose}
         className="absolute inset-0 bg-black/70"
       />
-      <div className="relative flex w-full max-w-sm flex-col gap-3 rounded-lg border border-accent/30 bg-background p-4 shadow-2xl">
+      <div className="relative flex w-full max-w-sm flex-col gap-3 rounded-lg border border-accent/30 bg-background p-4 pt-16 shadow-2xl">
         <button
           type="button"
           aria-label="Cancelar"
@@ -334,8 +334,9 @@ function ItemClaimModal({
 
             <button
               type="button"
+              disabled={units === null || units >= available}
               onClick={() => setUnits(available)}
-                className="self-center rounded-full border border-primary px-3 py-1 text-xs text-primary"
+              className="self-center rounded-full border border-success-solid px-3 py-1 text-xs text-success-foreground disabled:cursor-not-allowed disabled:opacity-40"
             >
               Seleccionar todo
             </button>
@@ -401,8 +402,9 @@ function ItemClaimModal({
             </div>
             <button
               type="button"
+              disabled={sharedWith.length === others.length}
               onClick={() => setSharedWith(others.map((p) => p.key))}
-              className="self-center rounded-full border border-zinc-300 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+              className="self-center rounded-full border border-success-solid px-3 py-1 text-xs text-success-foreground disabled:cursor-not-allowed disabled:opacity-40"
             >
               Seleccionar todos
             </button>

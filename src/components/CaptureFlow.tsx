@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { getOcrProvider, preprocessReceiptImage } from "@/lib/ocr";
 import { warpToRectangle, type Quad } from "@/lib/ocr/perspective";
 import { parseReceipt } from "@/lib/receipt/parser";
 import { computeSplit, type SplitResult } from "@/lib/split";
 import { ReceiptEditor } from "@/components/ReceiptEditor";
-import { CropStep } from "@/components/CropStep";
+import { CropStep, DEFAULT_CORNERS } from "@/components/CropStep";
 import { ParticipantRoster } from "@/components/ParticipantRoster";
 import { PersonClaimStep } from "@/components/PersonClaimStep";
 import { PersonTotals } from "@/components/PersonTotals";
 import { formatCents } from "@/lib/money";
 import {
   buildSplitClaims,
+  choiceGroup,
+  choiceTotalUnits,
+  ownChoice,
   removeParticipantClaims,
-  selectDefaultItemForParticipant,
   setClaimChoice,
   unitsTakenByAll,
   type ClaimChoice,
@@ -27,6 +30,7 @@ import {
   type EditableExtras,
   type EditableItem,
 } from "@/lib/receipt/editable";
+import { clearSession, loadSession, saveSession } from "@/lib/session-storage";
 
 type ScanStatus =
   "idle" | "preprocessing" | "recognizing" | "parsing" | "done" | "error";
@@ -40,7 +44,14 @@ export function CaptureFlow() {
 
   const [rawFile, setRawFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [cropCorners, setCropCorners] = useState<Quad>(DEFAULT_CORNERS);
   const [showCrop, setShowCrop] = useState(false);
+  const [showProcessingPreview, setShowProcessingPreview] = useState(false);
+  const [warpedPreviewUrl, setWarpedPreviewUrl] = useState<string | null>(null);
+  const [processedPreviewUrl, setProcessedPreviewUrl] = useState<string | null>(
+    null,
+  );
+  const [processedForOcr, setProcessedForOcr] = useState<Blob | null>(null);
   const [status, setStatus] = useState<ScanStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -65,6 +76,59 @@ export function CaptureFlow() {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
     "idle",
   );
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const hydrated = useRef(false);
+
+  // La imagen del ticket no se puede serializar: al recargar se recupera el
+  // reparto ya extraído, no el flujo de captura.
+  useEffect(() => {
+    const saved = loadSession();
+    hydrated.current = true;
+    if (!saved) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- rehidratacion puntual al montar */
+    setItems(saved.items);
+    setExtras(saved.extras);
+    setShowEditor(saved.showEditor);
+    setLocalStage(saved.localStage);
+    setParticipants(saved.participants);
+    setClaims(saved.claims);
+    setConfirmedKeys(saved.confirmedKeys);
+    setActiveKey(saved.activeKey);
+    setLocalResult(saved.localResult);
+    setShowBillInRoster(saved.showBillInRoster);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    if (!showEditor && items.length === 0) {
+      clearSession();
+      return;
+    }
+    saveSession({
+      items,
+      extras,
+      showEditor,
+      localStage,
+      participants,
+      claims,
+      confirmedKeys,
+      activeKey,
+      localResult,
+      showBillInRoster,
+    });
+  }, [
+    items,
+    extras,
+    showEditor,
+    localStage,
+    participants,
+    claims,
+    confirmedKeys,
+    activeKey,
+    localResult,
+    showBillInRoster,
+  ]);
 
   useEffect(() => {
     if (
@@ -75,39 +139,49 @@ export function CaptureFlow() {
     }
   }, [localStage, participants]);
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (warpedPreviewUrl) URL.revokeObjectURL(warpedPreviewUrl);
+    };
+  }, [warpedPreviewUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (processedPreviewUrl) URL.revokeObjectURL(processedPreviewUrl);
+    };
+  }, [processedPreviewUrl]);
+
   // Once diners start picking their items, the global bill is only reachable
   // through the "edit bill" toggle in the names roster, not shown by default.
   const showReceiptEditor =
     localStage === "bill" || (localStage === "roster" && showBillInRoster);
 
   function handleFileSelected(file: File) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (warpedPreviewUrl) URL.revokeObjectURL(warpedPreviewUrl);
+    if (processedPreviewUrl) URL.revokeObjectURL(processedPreviewUrl);
     setRawFile(file);
     setPreviewUrl(URL.createObjectURL(file));
+    setWarpedPreviewUrl(null);
+    setProcessedPreviewUrl(null);
+    setProcessedForOcr(null);
+    setShowProcessingPreview(false);
     setScanError(null);
     setShowEditor(false);
+    setCropCorners(DEFAULT_CORNERS);
     setShowCrop(true);
   }
 
-  async function handleCropConfirmed(
-    fractionalQuad: Quad,
-    naturalWidth: number,
-    naturalHeight: number,
-  ) {
-    if (!rawFile) return;
-    setShowCrop(false);
-
-    // CropStep reports corners as fractions (0-1) of the displayed image;
-    // warpToRectangle needs actual pixel coordinates in the source image.
-    const quad = fractionalQuad.map((point) => ({
-      x: point.x * naturalWidth,
-      y: point.y * naturalHeight,
-    })) as Quad;
-
+  async function recognizeFromProcessedImage(processed: Blob) {
+    setShowProcessingPreview(false);
+    setScanError(null);
     try {
-      setStatus("preprocessing");
-      const warped = await warpToRectangle(rawFile, quad);
-      const processed = await preprocessReceiptImage(warped);
-
       setStatus("recognizing");
       setProgress(0);
       const provider = getOcrProvider();
@@ -138,6 +212,42 @@ export function CaptureFlow() {
 
       setStatus("done");
       setShowEditor(true);
+    } catch (err) {
+      setStatus("error");
+      setScanError(
+        err instanceof Error ? err.message : "Error al leer el ticket",
+      );
+    }
+  }
+
+  async function handleCropConfirmed(
+    fractionalQuad: Quad,
+    naturalWidth: number,
+    naturalHeight: number,
+  ) {
+    if (!rawFile) return;
+    setCropCorners(fractionalQuad);
+    setShowCrop(false);
+
+    // CropStep reports corners as fractions (0-1) of the displayed image;
+    // warpToRectangle needs actual pixel coordinates in the source image.
+    const quad = fractionalQuad.map((point) => ({
+      x: point.x * naturalWidth,
+      y: point.y * naturalHeight,
+    })) as Quad;
+
+    try {
+      setStatus("preprocessing");
+      const warped = await warpToRectangle(rawFile, quad);
+      const processed = await preprocessReceiptImage(warped);
+
+      if (warpedPreviewUrl) URL.revokeObjectURL(warpedPreviewUrl);
+      if (processedPreviewUrl) URL.revokeObjectURL(processedPreviewUrl);
+      setWarpedPreviewUrl(URL.createObjectURL(warped));
+      setProcessedPreviewUrl(URL.createObjectURL(processed));
+      setProcessedForOcr(processed);
+      setShowProcessingPreview(true);
+      setStatus("idle");
     } catch (err) {
       setStatus("error");
       setScanError(
@@ -193,7 +303,43 @@ export function CaptureFlow() {
     }
   }
 
+  function resetToStart() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (warpedPreviewUrl) URL.revokeObjectURL(warpedPreviewUrl);
+    if (processedPreviewUrl) URL.revokeObjectURL(processedPreviewUrl);
+    setRawFile(null);
+    setPreviewUrl(null);
+    setWarpedPreviewUrl(null);
+    setProcessedPreviewUrl(null);
+    setProcessedForOcr(null);
+    setCropCorners(DEFAULT_CORNERS);
+    setShowCrop(false);
+    setShowProcessingPreview(false);
+    setStatus("idle");
+    setProgress(0);
+    setScanError(null);
+    setItems([]);
+    setExtras(EMPTY_EXTRAS);
+    setShowEditor(false);
+    setLocalStage("bill");
+    setParticipants([
+      { key: newItemId(), name: "" },
+      { key: newItemId(), name: "" },
+    ]);
+    setClaims({});
+    setConfirmedKeys([]);
+    setActiveKey(null);
+    setLocalResult(null);
+    setShowUnclaimedPrompt(false);
+    setShowBillInRoster(false);
+    setCopyStatus("idle");
+    setShowResetConfirm(false);
+    clearSession();
+  }
+
   function startManualEntry() {
+    setShowProcessingPreview(false);
+    setProcessedForOcr(null);
     setItems([]);
     setExtras(EMPTY_EXTRAS);
     setShowEditor(true);
@@ -297,18 +443,72 @@ export function CaptureFlow() {
   const unclaimedItems = items.filter(
     (item) => unitsTakenByAll(item, claims) < item.quantity,
   );
+  const hasProgress =
+    showEditor || showCrop || showProcessingPreview || items.length > 0;
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
       <div className="flex flex-col items-center gap-2 text-center">
-        <picture>
-          <source
-            srcSet="/logo-dark.svg"
-            media="(prefers-color-scheme: dark)"
-          />
-          <img src="/logo-light.svg" alt="miTicket" className="h-16 w-auto" />
-        </picture>
-        {!showEditor && !showCrop && (
+        <button
+          type="button"
+          onClick={() => {
+            if (hasProgress) setShowResetConfirm(true);
+          }}
+          aria-label="Volver al inicio"
+          className="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <picture>
+            <source
+              srcSet="/logo-dark.svg"
+              media="(prefers-color-scheme: dark)"
+            />
+            <img src="/logo-light.svg" alt="miTicket" className="h-16 w-auto" />
+          </picture>
+        </button>
+
+        {showResetConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <button
+              type="button"
+              aria-label="Cerrar"
+              onClick={() => setShowResetConfirm(false)}
+              className="absolute inset-0 bg-black/70"
+            />
+            <div className="relative flex w-full max-w-sm flex-col gap-3 rounded-lg border border-warning-solid bg-warning-bg p-4 shadow-2xl">
+              <div className="flex items-center justify-center gap-2 text-warning-foreground">
+                <AlertTriangle
+                  aria-hidden="true"
+                  size={20}
+                  strokeWidth={2}
+                  className="shrink-0"
+                />
+                <p className="text-center text-lg font-bold">
+                  ¿Volver al inicio?
+                </p>
+              </div>
+              <p className="text-center text-sm text-warning-foreground">
+                Se perderán el ticket y el reparto que tengas en curso.
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(false)}
+                  className="rounded-full border border-accent px-5 py-3 text-sm font-medium text-accent hover:bg-accent/10"
+                >
+                  Seguir aquí
+                </button>
+                <button
+                  type="button"
+                  onClick={resetToStart}
+                  className="rounded-full bg-accent px-5 py-3 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+                >
+                  Empezar de nuevo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {!showEditor && !showCrop && !showProcessingPreview && (
           <>
             <p className="text-xl font-bold text-accent">
               Selecciona una opción
@@ -338,6 +538,7 @@ export function CaptureFlow() {
       {showCrop && previewUrl && (
         <CropStep
           imageUrl={previewUrl}
+          initialCorners={cropCorners}
           onCancel={() => {
             setShowCrop(false);
             cameraInputRef.current?.click();
@@ -348,7 +549,49 @@ export function CaptureFlow() {
         />
       )}
 
-      {!showEditor && !showCrop && (
+      {showProcessingPreview && processedPreviewUrl && (
+        <div className="flex flex-col gap-4">
+          <p className="text-center text-xl font-bold text-accent">
+            Revisa cómo se procesará la imagen
+          </p>
+
+          <div className="rounded-lg border border-zinc-300/70 p-2 dark:border-zinc-700">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={warpedPreviewUrl ?? processedPreviewUrl}
+              alt="Recorte enderezado del ticket"
+              className="w-full rounded"
+            />
+          </div>
+
+          <div className="flex w-full gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowProcessingPreview(false);
+                setCropCorners((prev) => prev);
+                setShowCrop(true);
+              }}
+              className="flex-1 rounded-full border border-zinc-400 px-5 py-2 text-sm font-medium"
+            >
+              Ajustar recorte
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!processedForOcr) return;
+                void recognizeFromProcessedImage(processedForOcr);
+              }}
+              disabled={!processedForOcr}
+              className="flex-1 rounded-full bg-accent px-5 py-2 text-sm font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
+            >
+              Continuar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!showEditor && !showCrop && !showProcessingPreview && (
         <div className="flex flex-col items-center gap-5 text-center">
           {/* Sin `capture`, para que el selector abra la galería en vez de la cámara */}
           <input
@@ -612,21 +855,67 @@ export function CaptureFlow() {
                 onClick={() => setShowUnclaimedPrompt(false)}
                 className="absolute inset-0 bg-black/70"
               />
-              <div className="relative flex w-full max-w-sm flex-col gap-3 rounded-lg border border-accent/30 bg-background p-4 shadow-2xl">
-                <p className="text-center text-lg font-bold text-accent">
-                  Quedan productos sin pagar
-                </p>
-                <ul className="list-disc pl-5 text-sm text-accent/80">
-                  {unclaimedItems.map((item) => (
-                    <li key={item.id}>
-                      {item.name || "Producto sin nombre"} — {item.quantity} ud.
-                      × {formatCents(item.unitPriceCents, "EUR")}
-                    </li>
-                  ))}
+              <div className="relative flex w-full max-w-sm flex-col gap-3 rounded-lg border border-warning-solid bg-warning-bg p-4 shadow-2xl">
+                <div className="flex items-center justify-center gap-2 text-warning-foreground">
+                  <AlertTriangle
+                    aria-hidden="true"
+                    size={20}
+                    strokeWidth={2}
+                    className="shrink-0"
+                  />
+                  <p className="text-center text-lg font-bold">
+                    Productos sin asignar
+                  </p>
+                </div>
+                <ul className="flex flex-col gap-2 text-sm text-warning-foreground">
+                  {unclaimedItems.map((item) => {
+                    const missing =
+                      item.quantity - unitsTakenByAll(item, claims);
+                    const assignments = namedParticipants
+                      .map((participant) => {
+                        const choice = ownChoice(
+                          claims,
+                          participant.key,
+                          item.id,
+                        );
+                        if (!choice) return null;
+                        const group = choiceGroup(participant.key, choice).map(
+                          (key) =>
+                            namedParticipants
+                              .find((p) => p.key === key)
+                              ?.name.trim() || "?",
+                        );
+                        return {
+                          ownerKey: participant.key,
+                          units: choiceTotalUnits(item, choice),
+                          names: group.join(" + "),
+                        };
+                      })
+                      .filter((entry) => entry !== null);
+                    return (
+                      <li
+                        key={item.id}
+                        className="rounded border border-warning-solid/40 px-2 py-1.5"
+                      >
+                        <p className="font-medium">
+                          {item.name || "Producto sin nombre"} — faltan{" "}
+                          {roundUnits(missing)} ud. ×{" "}
+                          {formatCents(item.unitPriceCents, "EUR")}
+                        </p>
+                        {assignments.length > 0 && (
+                          <ul className="mt-1 list-disc pl-4 text-xs opacity-80">
+                            {assignments.map((assignment) => (
+                              <li key={assignment.ownerKey}>
+                                {roundUnits(assignment.units)} ud. —{" "}
+                                {assignment.names}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
-                <p className="text-center text-sm text-accent/70">
-                  ¿Quieres revisarlos o dividirlos entre todos a partes iguales?
-                </p>
                 <div className="flex flex-col gap-2">
                   <button
                     type="button"
@@ -670,26 +959,6 @@ export function CaptureFlow() {
 
           {localStage === "results" && localResult && (
             <div className="flex flex-col gap-3">
-              {localResult.unclaimedItemIds.length > 0 && (
-                <div className="rounded bg-warning-bg px-3 py-2 text-sm text-warning-foreground">
-                  <p className="font-medium">
-                    Hay productos sin asignar a nadie (se han repartido a partes
-                    iguales):
-                  </p>
-                  <ul className="mt-1 list-disc pl-4">
-                    {localResult.unclaimedItemIds.map((itemId) => {
-                      const item = items.find((i) => i.id === itemId);
-                      if (!item) return null;
-                      return (
-                        <li key={itemId}>
-                          {item.name || "Producto sin nombre"} — {item.quantity}{" "}
-                          ud. × {formatCents(item.unitPriceCents, "EUR")}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
               {localResult.people.map((person) => (
                 <PersonTotals
                   key={person.participantId}
@@ -739,4 +1008,8 @@ function sumByKind(
 
 function normalizeParticipantName(name: string): string {
   return name.trim().replace(/\s+/g, " ").toUpperCase();
+}
+
+function roundUnits(units: number): number {
+  return Math.round(units * 100) / 100;
 }

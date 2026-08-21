@@ -41,20 +41,18 @@ export function PersonTotals({
 
       <div className="mt-3 flex flex-col gap-1 border-t border-primary/15 pt-3 text-xs text-zinc-500 dark:border-primary/20">
         {person.items.map((item) => (
-          <div key={item.itemId} className="flex justify-between gap-2">
+          <div
+            key={item.itemId}
+            className={`flex justify-between gap-2 ${
+              item.hasUnclaimedShare
+                ? "font-semibold text-warning-solid"
+                : undefined
+            }`}
+          >
             <span className="truncate">
               {item.itemName}
               {item.effectiveUnits > 0 && (
-                <span
-                  className={
-                    item.hasUnclaimedShare
-                      ? "font-semibold text-red-500 dark:text-red-400"
-                      : undefined
-                  }
-                >
-                  {" "}
-                  x{Math.round(item.effectiveUnits * 100) / 100}
-                </span>
+                <span> x{Math.round(item.effectiveUnits * 100) / 100}</span>
               )}
             </span>
             <span className="tabular-nums">
