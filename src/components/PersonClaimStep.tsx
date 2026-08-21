@@ -272,10 +272,13 @@ function ItemClaimModal({
               </button>
               <input
                 type="text"
-                inputMode="text"
+                inputMode="decimal"
                 value={text}
                 onChange={(e) => {
-                  const value = e.target.value;
+                  // Strip anything that isn't part of a number or fraction
+                  // (digits, decimal separator, "/" and spaces for mixed
+                  // fractions) so letters can never be typed in.
+                  const value = e.target.value.replace(/[^0-9.,/\s]/g, "");
                   const parsedValue = parseUnitsInput(value);
                   // Clamp only once the input resolves to a valid number, so
                   // partial input (e.g. "1/", trailing decimal separator) can
