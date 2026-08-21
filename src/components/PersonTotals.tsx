@@ -1,0 +1,110 @@
+"use client";
+
+import type { PersonSplit } from "@/lib/split";
+import { formatCents } from "@/lib/money";
+
+interface PersonTotalsProps {
+  readonly person: PersonSplit;
+  readonly currency: string;
+  readonly hasPaid: boolean;
+  readonly isOwn: boolean;
+  readonly disabled?: boolean;
+  readonly onTogglePaid?: () => void;
+}
+
+export function PersonTotals({
+  person,
+  currency,
+  hasPaid,
+  isOwn,
+  disabled,
+  onTogglePaid,
+}: PersonTotalsProps) {
+  return (
+    <details className="group rounded-xl border border-primary/20 bg-primary/15 p-3 dark:border-primary/25 dark:bg-primary/10">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+        <span className="text-base font-bold">
+          {person.name}
+          {isOwn && <span className="text-zinc-400"> (tú)</span>}
+        </span>
+        <span className="flex items-center gap-3">
+          <span className="text-base font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
+            {formatCents(person.totalCents, currency)}
+          </span>
+          {hasPaid && (
+            <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
+              Pagado
+            </span>
+          )}
+        </span>
+      </summary>
+
+      <div className="mt-3 flex flex-col gap-1 border-t border-primary/15 pt-3 text-xs text-zinc-500 dark:border-primary/20">
+        {person.items.map((item) => (
+          <div key={item.itemId} className="flex justify-between gap-2">
+            <span className="truncate">
+              {item.itemName}
+              {item.effectiveUnits > 0 && (
+                <span
+                  className={
+                    item.hasUnclaimedShare
+                      ? "font-semibold text-red-500 dark:text-red-400"
+                      : undefined
+                  }
+                >
+                  {" "}
+                  x{Math.round(item.effectiveUnits * 100) / 100}
+                </span>
+              )}
+            </span>
+            <span className="tabular-nums">
+              {formatCents(item.shareCents, currency)}
+            </span>
+          </div>
+        ))}
+        {person.items.length === 0 && <p>No ha reclamado ninguna línea.</p>}
+        <div className="mt-1 flex justify-between gap-2 border-t border-zinc-100 pt-1 dark:border-zinc-800">
+          <span>Subtotal</span>
+          <span className="tabular-nums">
+            {formatCents(person.subtotalCents, currency)}
+          </span>
+        </div>
+        {person.taxCents > 0 && (
+          <div className="flex justify-between gap-2">
+            <span>IVA</span>
+            <span className="tabular-nums">
+              {formatCents(person.taxCents, currency)}
+            </span>
+          </div>
+        )}
+        {person.tipCents > 0 && (
+          <div className="flex justify-between gap-2">
+            <span>Propina / servicio</span>
+            <span className="tabular-nums">
+              {formatCents(person.tipCents, currency)}
+            </span>
+          </div>
+        )}
+        {person.discountCents > 0 && (
+          <div className="flex justify-between gap-2">
+            <span>Descuento</span>
+            <span className="tabular-nums">
+              -{formatCents(person.discountCents, currency)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {isOwn && onTogglePaid && (
+        <button
+          type="button"
+          onClick={onTogglePaid}
+          disabled={disabled}
+          className="mt-3 w-full rounded-full border border-accent px-4 py-2 text-sm font-medium text-accent hover:bg-accent/10 disabled:opacity-50"
+        >
+          {hasPaid ? "Marcar como no pagado" : "He pagado"}
+        </button>
+      )}
+    </details>
+  );
+}
